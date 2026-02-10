@@ -1,0 +1,8 @@
+---
+
+- name: restart singbox
+  containers.podman.podman_container:
+    name: sing-box
+    state: started
+    restart: true
+  listen: restart singbox

@@ -1,0 +1,31 @@
+---
+
+- name: Обновление системы
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Установка контейнеризации
+  apt:
+    name:
+      - podman
+      - podman-compose
+      - podman-docker
+      - iptables-persistent
+      - containernetworking-plugins
+      - chrony
+    state: present
+
+- name: Активация и запуск священного демона хронометрии
+  systemd:
+    name: "{{ chrony_service_name }}"
+    state: started
+    enabled: true
+
+- name: Sysctl для контейнеров
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    reload: yes
+  loop:
+    - { name: 'net.ipv4.ip_forward', value: '1' }

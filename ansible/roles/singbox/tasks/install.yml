@@ -1,0 +1,8 @@
+---
+
+- name: Извлечение образа из реестра
+  containers.podman.podman_image:
+    name: "{{ singbox_image_name }}"
+    tag: "{{ singbox_image_version }}"
+    state: present
+    force: true

@@ -1,0 +1,14 @@
+---
+
+- name: Деплойт контейнеров
+  containers.podman.podman_container:
+    name: sing-box
+    image: "{{ singbox_image_name }}:{{ singbox_image_version }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "443:443"
+    volumes:
+      - /etc/sing-box/config.json:/etc/sing-box/config.json:ro,Z
+      - /etc/sing-box/secrets:/etc/sing-box/secrets:ro
+    command: run -c /etc/sing-box/config.json

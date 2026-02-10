@@ -1,0 +1,20 @@
+---
+
+- name: Бутстрап новой ноды от рута (ЕДИНСТВЕННЫЙ РАЗ)
+  hosts: all
+  remote_user: root
+  gather_facts: yes
+  tags: [bootstrap-root]
+  roles:
+    - bootstrap
+    - singbox
+  vars:
+    bootstrap_mode: root
+
+- name: Обновление sing-box конфигурации (без рута)
+  hosts: workers
+  remote_user: deploy
+  gather_facts: no
+  tags: [update-singbox]
+  roles:
+    - singbox

@@ -1,0 +1,73 @@
+---
+
+- name: Генерация UUID (пропускается если файл существует)
+  command: podman run --rm {{ singbox_image_name }}:{{ singbox_image_version }} generate uuid
+  args:
+    creates: "{{ singbox_secrets_dir_path }}/uuid.txt"
+  register: uuid_raw
+
+- name: Генерация Reality ключей (пропускается если приватный ключ существует)
+  command: podman run --rm {{ singbox_image_name }}:{{ singbox_image_version }} generate reality-keypair
+  args:
+    creates: "{{ singbox_secrets_dir_path }}/reality_private.txt"
+  register: reality_raw
+
+- name: Генерация short_id (пропускается если файл существует)
+  command: podman run --rm {{ singbox_image_name }}:{{ singbox_image_version }} generate rand 8 --hex
+  args:
+    creates: "{{ singbox_secrets_dir_path }}/shortid.txt"
+  register: shortid_raw
+
+- name: Сохраняем UUID в файл
+  copy:
+    content: "{{ uuid_raw.stdout | trim }}"
+    dest: "{{ singbox_secrets_dir_path }}/uuid.txt"
+    mode: '0600'
+  when: uuid_raw.changed | default(false)
+
+- name: Сохраняем Reality приватный ключ в файл
+  copy:
+    content: "{{ reality_raw.stdout | regex_search('PrivateKey:\\s*(.+)', '\\1') | first | trim }}"
+    dest: "{{ singbox_secrets_dir_path }}/reality_private.txt"
+    mode: '0600'
+  when: reality_raw.changed | default(false)
+
+- name: Сохраняем Reality публичный ключ в файл
+  copy:
+    content: "{{ reality_raw.stdout | regex_search('PublicKey:\\s*(.+)', '\\1') | first | trim }}"
+    dest: "{{ singbox_secrets_dir_path }}/reality_public.txt"
+    mode: '0600'
+  when: reality_raw.changed | default(false)
+
+- name: Сохраняем short_id в файл
+  copy:
+    content: "{{ shortid_raw.stdout | trim }}"
+    dest: "{{ singbox_secrets_dir_path }}/shortid.txt"
+    mode: '0600'
+  when: shortid_raw.changed | default(false)
+
+- name: Чтение секретов с целевого хоста для установки фактов
+  slurp:
+    src: "{{ singbox_secrets_dir_path }}/{{ item }}"
+  loop:
+    - uuid.txt
+    - reality_private.txt
+    - reality_public.txt
+    - shortid.txt
+  register: secrets_content
+
+- name: Установка фактов из прочитанных файлов
+  set_fact:
+    vless_uuid: "{{ (secrets_content.results | selectattr('item', 'equalto', 'uuid.txt') | first).content | b64decode | trim }}"
+    reality_private: "{{ (secrets_content.results | selectattr('item', 'equalto', 'reality_private.txt') | first).content | b64decode | trim }}"
+    reality_public: "{{ (secrets_content.results | selectattr('item', 'equalto', 'reality_public.txt') | first).content | b64decode | trim }}"
+    reality_shortid: "{{ (secrets_content.results | selectattr('item', 'equalto', 'shortid.txt') | first).content | b64decode | trim }}"
+    cacheable: yes
+
+- name: Вывод секретов для создания конфига
+  debug:
+    msg: |
+      "ip": "{{ inventory_hostname }}",
+      "uuid": "{{ vless_uuid }}",
+      "pbk": "{{ reality_public }}",
+      "sid": "{{ reality_shortid }}"

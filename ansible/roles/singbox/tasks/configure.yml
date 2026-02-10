@@ -1,0 +1,8 @@
+---
+
+ - name: Рендерим config.json для Sing-box
+   template:
+     src: config.json.j2
+     dest: "{{ singbox_config_path }}"
+     mode: '0644'
+   notify: restart singbox

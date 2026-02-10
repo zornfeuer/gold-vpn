@@ -1,0 +1,4 @@
+singbox_config_path: /etc/sing-box/config.json
+singbox_secrets_dir_path: /etc/sing-box/secrets
+singbox_image_name: ghcr.io/sagernet/sing-box
+singbox_image_version: v1.12.21

@@ -1,0 +1,30 @@
+---
+
+- name: Проверяем существование директории /etc/sing-box
+  stat:
+    path: /etc/sing-box
+  register: singbox_base_dir_stat
+
+- name: Создаём директорию /etc/sing-box (только если отсутствует)
+  file:
+    path: /etc/sing-box
+    state: directory
+    mode: '0700'
+  when: not singbox_base_dir_stat.stat.exists
+
+- name: Проверяем существование директории секретов
+  stat:
+    path: "{{ singbox_secrets_dir_path }}"
+  register: secrets_dir_stat
+
+- name: Создаём директорию секретов (только если отсутствует)
+  file:
+    path: "{{ singbox_secrets_dir_path }}"
+    state: directory
+    mode: '0700'
+  when: not secrets_dir_stat.stat.exists
+
+- import_tasks: install.yml
+- import_tasks: generate_keys.yml
+- import_tasks: configure.yml
+- import_tasks: service.yml
