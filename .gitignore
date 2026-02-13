@@ -1,2 +1,4 @@
 backend/target
 ansible/inventory
+.env
+secrets
